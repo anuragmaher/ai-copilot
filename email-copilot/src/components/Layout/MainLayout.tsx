@@ -75,14 +75,14 @@ const MainLayout: React.FC = () => {
           <Box
             sx={{
               flexGrow: 1,
-              display: 'flex',
+              display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
               maxWidth: '720px',
               bgcolor: isDarkMode ? 'rgba(241, 243, 244, 0.1)' : 'rgba(60, 64, 67, 0.1)',
               borderRadius: '8px',
               px: 2,
               py: 1,
-              mr: 4,
+              mr: { xs: 0, md: 4 },
               '&:hover': {
                 boxShadow: '0 2px 5px 1px rgba(64,60,67,.16)'
               }
@@ -102,6 +102,9 @@ const MainLayout: React.FC = () => {
               }}
             />
           </Box>
+
+          {/* Spacer for mobile */}
+          <Box sx={{ flexGrow: { xs: 1, md: 0 } }} />
 
           {/* Right side icons */}
           <IconButton color="inherit" sx={{ color: 'text.secondary' }}>
@@ -148,7 +151,8 @@ const MainLayout: React.FC = () => {
           sx={{
             width: '20%',
             minWidth: '250px',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            display: { xs: 'none', md: 'block' }
           }}
         >
           <EmailList />
@@ -157,7 +161,8 @@ const MainLayout: React.FC = () => {
         <Box
           sx={{
             width: '50%',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            display: { xs: 'none', md: 'block' }
           }}
         >
           <EmailConversation />
@@ -165,7 +170,7 @@ const MainLayout: React.FC = () => {
 
         <Box
           sx={{
-            width: '30%',
+            width: { xs: '100%', md: '30%' },
             overflow: 'hidden'
           }}
         >
