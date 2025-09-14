@@ -27,6 +27,8 @@ import AICopilot from '../AI/AICopilot';
 const MainLayout: React.FC = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [copilotWidth, setCopilotWidth] = React.useState(25);
+  const [isDragging, setIsDragging] = React.useState(false);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -35,6 +37,46 @@ const MainLayout: React.FC = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+
+    const containerWidth = window.innerWidth;
+    const sidebarWidth = 250; // EmailList width
+    const availableWidth = containerWidth - sidebarWidth;
+    const mouseX = e.clientX - sidebarWidth;
+    const newCopilotWidth = Math.min(Math.max(((availableWidth - mouseX) / availableWidth) * 100, 15), 50);
+
+    setCopilotWidth(newCopilotWidth);
+  }, [isDragging]);
+
+  const handleMouseUp = React.useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  React.useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   return (
     <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -160,7 +202,7 @@ const MainLayout: React.FC = () => {
 
         <Box
           sx={{
-            width: '50%',
+            width: `${100 - 20 - copilotWidth}%`,
             overflow: 'hidden',
             display: { xs: 'none', md: 'block' }
           }}
@@ -168,9 +210,24 @@ const MainLayout: React.FC = () => {
           <EmailConversation />
         </Box>
 
+        {/* Resize Handle */}
+        <Box
+          onMouseDown={handleMouseDown}
+          sx={{
+            width: '4px',
+            cursor: 'col-resize',
+            bgcolor: isDragging ? 'primary.main' : 'transparent',
+            transition: 'background-color 0.2s',
+            '&:hover': {
+              bgcolor: 'primary.light'
+            },
+            display: { xs: 'none', md: 'block' }
+          }}
+        />
+
         <Box
           sx={{
-            width: { xs: '100%', md: '30%' },
+            width: { xs: '100%', md: `${copilotWidth}%` },
             overflow: 'hidden'
           }}
         >
