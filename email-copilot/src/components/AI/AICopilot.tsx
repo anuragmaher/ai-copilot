@@ -556,7 +556,7 @@ Feel free to remix and combine any of these options to create a custom response.
                 borderRadius: message.type === 'user'
                   ? '8px 8px 2px 8px'
                   : '8px 8px 8px 2px',
-                p: 2
+                p: 1.5
               }}
             >
               {message.type === 'user' ? (
@@ -628,8 +628,8 @@ Feel free to remix and combine any of these options to create a custom response.
             <Box sx={{
               bgcolor: '#f8f9fa',
               borderRadius: '8px 8px 8px 2px',
-              px: 2,
-              py: 1,
+              px: 1.5,
+              py: 0.75,
               display: 'flex',
               alignItems: 'center',
               gap: 1
@@ -658,7 +658,7 @@ Feel free to remix and combine any of these options to create a custom response.
               maxWidth: '80%',
               bgcolor: '#f8f9fa',
               borderRadius: '8px 8px 8px 2px',
-              p: 2
+              p: 1.5
             }}>
               <Box sx={{ position: 'relative' }}>
                 <ReactMarkdown
