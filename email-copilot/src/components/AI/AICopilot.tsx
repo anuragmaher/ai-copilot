@@ -25,7 +25,11 @@ import {
   ContentCopy,
   Reply,
   ReplyAll,
-  AutoAwesome
+  AutoAwesome,
+  ArrowDropUp,
+  ShortText,
+  FormatAlignLeft,
+  Psychology
 } from '@mui/icons-material';
 
 interface ChatMessage {
@@ -44,6 +48,7 @@ const AICopilot: React.FC = () => {
   const [showInsertButton, setShowInsertButton] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [showReplyModal, setShowReplyModal] = React.useState(false);
+  const [refineMenuAnchorEl, setRefineMenuAnchorEl] = React.useState<null | HTMLElement>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -332,6 +337,21 @@ Feel free to remix and combine any of these options to create a custom response.
     setIsStreaming(false);
   };
 
+  const handleRefineMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setRefineMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleRefineMenuClose = () => {
+    setRefineMenuAnchorEl(null);
+  };
+
+  const handleRefineOption = (option: string) => {
+    console.log(`Refining with option: ${option}`);
+    // Add logic here to refine the last AI response based on the selected option
+    handleRefineMenuClose();
+    setShowInsertButton(false);
+  };
+
   const quickActions = [
     {
       title: 'Draft a reply',
@@ -405,7 +425,8 @@ Feel free to remix and combine any of these options to create a custom response.
       }}>
         {/* Welcome Section - always show */}
           <Box sx={{
-            py: 4,
+            py: 2,
+            pb: 1,
             display: 'flex',
             flexDirection: 'column',
             gap: 3
@@ -463,7 +484,7 @@ Feel free to remix and combine any of these options to create a custom response.
             </Box>
 
             {/* Quick Action Buttons */}
-            <Box sx={{ mt: 3 }}>
+            <Box sx={{ mt: 2 }}>
               <Stack spacing={1}>
                 {quickActions.map((action, index) => (
                   <Button
@@ -710,7 +731,8 @@ Feel free to remix and combine any of these options to create a custom response.
             <Button
               variant="outlined"
               size="small"
-              onClick={() => setShowInsertButton(false)}
+              onClick={handleRefineMenuOpen}
+              endIcon={<ArrowDropUp />}
               sx={{
                 textTransform: 'none',
                 borderRadius: 1.5,
@@ -722,8 +744,36 @@ Feel free to remix and combine any of these options to create a custom response.
                 }
               }}
             >
-              Refine with KB
+              Refine options
             </Button>
+
+            {/* Refine Menu */}
+            <Menu
+              anchorEl={refineMenuAnchorEl}
+              open={Boolean(refineMenuAnchorEl)}
+              onClose={handleRefineMenuClose}
+              anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+              transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+              sx={{
+                '& .MuiPaper-root': {
+                  minWidth: '180px',
+                  mt: -1
+                }
+              }}
+            >
+              <MenuItem onClick={() => handleRefineOption('make-short')}>
+                <ShortText sx={{ mr: 1, fontSize: '1rem' }} />
+                Make it short
+              </MenuItem>
+              <MenuItem onClick={() => handleRefineOption('elaborate')}>
+                <FormatAlignLeft sx={{ mr: 1, fontSize: '1rem' }} />
+                Elaborate
+              </MenuItem>
+              <MenuItem onClick={() => handleRefineOption('refine-kb')}>
+                <Psychology sx={{ mr: 1, fontSize: '1rem' }} />
+                Refine with KB
+              </MenuItem>
+            </Menu>
           </Box>
         )}
 
