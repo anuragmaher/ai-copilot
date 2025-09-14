@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
   Box,
   Typography,
@@ -69,7 +70,7 @@ const AICopilot: React.FC = () => {
 
     // Start thinking
     setIsThinking(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 2250));
     setIsThinking(false);
 
     // Start streaming AI response
@@ -184,7 +185,7 @@ Best regards,
 
     // Start thinking
     setIsThinking(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setIsThinking(false);
 
     // Start streaming AI response with intent suggestions
@@ -419,21 +420,60 @@ Feel free to remix and combine any of these options to create a custom response.
                 bgcolor: message.type === 'user' ? '#4285f4' : '#f8f9fa',
                 color: message.type === 'user' ? '#ffffff' : 'text.primary',
                 borderRadius: message.type === 'user'
-                  ? '16px 16px 4px 16px'
-                  : '16px 16px 16px 4px',
+                  ? '8px 8px 2px 8px'
+                  : '8px 8px 8px 2px',
                 p: 2
               }}
             >
-              <Typography
-                variant="body2"
-                sx={{
-                  fontSize: '0.875rem',
-                  whiteSpace: 'pre-wrap',
-                  color: message.type === 'user' ? '#ffffff' : 'inherit'
-                }}
-              >
-                {message.content}
-              </Typography>
+              {message.type === 'user' ? (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: '0.875rem',
+                    whiteSpace: 'pre-wrap',
+                    color: '#ffffff'
+                  }}
+                >
+                  {message.content}
+                </Typography>
+              ) : (
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => (
+                      <Typography variant="body2" sx={{ fontSize: '0.875rem', mb: 1, '&:last-child': { mb: 0 } }}>
+                        {children}
+                      </Typography>
+                    ),
+                    h1: ({ children }) => (
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: '1rem' }}>
+                        {children}
+                      </Typography>
+                    ),
+                    h2: ({ children }) => (
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: '0.95rem' }}>
+                        {children}
+                      </Typography>
+                    ),
+                    strong: ({ children }) => (
+                      <Typography component="span" sx={{ fontWeight: 600 }}>
+                        {children}
+                      </Typography>
+                    ),
+                    ul: ({ children }) => (
+                      <Box component="ul" sx={{ pl: 2, mb: 1, '&:last-child': { mb: 0 } }}>
+                        {children}
+                      </Box>
+                    ),
+                    li: ({ children }) => (
+                      <Typography component="li" variant="body2" sx={{ fontSize: '0.875rem', mb: 0.5 }}>
+                        {children}
+                      </Typography>
+                    )
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              )}
             </Box>
 
             {message.type === 'user' && (
@@ -453,7 +493,7 @@ Feel free to remix and combine any of these options to create a custom response.
             </Avatar>
             <Box sx={{
               bgcolor: '#f8f9fa',
-              borderRadius: '16px 16px 16px 4px',
+              borderRadius: '8px 8px 8px 2px',
               px: 2,
               py: 1,
               display: 'flex',
@@ -483,11 +523,46 @@ Feel free to remix and combine any of these options to create a custom response.
             <Box sx={{
               maxWidth: '80%',
               bgcolor: '#f8f9fa',
-              borderRadius: '16px 16px 16px 4px',
+              borderRadius: '8px 8px 8px 2px',
               p: 2
             }}>
-              <Typography variant="body2" sx={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap' }}>
-                {streamingMessage}
+              <Box sx={{ position: 'relative' }}>
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => (
+                      <Typography variant="body2" sx={{ fontSize: '0.875rem', mb: 1, '&:last-child': { mb: 0 } }}>
+                        {children}
+                      </Typography>
+                    ),
+                    h1: ({ children }) => (
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: '1rem' }}>
+                        {children}
+                      </Typography>
+                    ),
+                    h2: ({ children }) => (
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: '0.95rem' }}>
+                        {children}
+                      </Typography>
+                    ),
+                    strong: ({ children }) => (
+                      <Typography component="span" sx={{ fontWeight: 600 }}>
+                        {children}
+                      </Typography>
+                    ),
+                    ul: ({ children }) => (
+                      <Box component="ul" sx={{ pl: 2, mb: 1, '&:last-child': { mb: 0 } }}>
+                        {children}
+                      </Box>
+                    ),
+                    li: ({ children }) => (
+                      <Typography component="li" variant="body2" sx={{ fontSize: '0.875rem', mb: 0.5 }}>
+                        {children}
+                      </Typography>
+                    )
+                  }}
+                >
+                  {streamingMessage}
+                </ReactMarkdown>
                 <Box component="span" sx={{
                   display: 'inline-block',
                   width: '2px',
@@ -496,7 +571,7 @@ Feel free to remix and combine any of these options to create a custom response.
                   ml: 0.5,
                   animation: 'blink 1s infinite'
                 }} />
-              </Typography>
+              </Box>
             </Box>
           </Box>
         )}
@@ -561,7 +636,7 @@ Feel free to remix and combine any of these options to create a custom response.
                   justifyContent: 'flex-start',
                   textTransform: 'none',
                   py: 1.5,
-                  borderRadius: 2,
+                  borderRadius: 1,
                   color: 'text.primary',
                   borderColor: 'divider',
                   '&:hover': {
@@ -596,7 +671,7 @@ Feel free to remix and combine any of these options to create a custom response.
           alignItems: 'flex-end',
           gap: 1,
           bgcolor: 'grey.100',
-          borderRadius: 3,
+          borderRadius: 1,
           p: 1
         }}>
           <TextField
