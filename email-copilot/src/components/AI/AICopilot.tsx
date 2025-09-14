@@ -264,6 +264,74 @@ Feel free to remix and combine any of these options to create a custom response.
     setShowInsertButton(false);
   };
 
+  const handleSummarize = async () => {
+    const summarizeMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: 'Summarize',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, summarizeMessage]);
+
+    // Start thinking
+    setIsThinking(true);
+    await new Promise(resolve => setTimeout(resolve, 2250));
+    setIsThinking(false);
+
+    // Start streaming AI response with bullet point summary
+    setIsStreaming(true);
+    setStreamingMessage('');
+
+    const response = `**Email Summary:**
+
+• **Subject**: Project Update - Q3 Milestones
+
+• **Sender**: John Doe (john.doe@company.com)
+
+• **Key Updates**:
+  - Phase 1 & 2 completed ✅
+  - Phase 3 development 80% complete 🔄
+  - Phase 4 testing scheduled for next week
+
+• **Major Achievements**:
+  - New authentication system integrated
+  - 35% performance improvement achieved
+  - All critical security vulnerabilities resolved
+
+• **Next Steps**:
+  - Complete remaining development by Friday
+  - Begin comprehensive testing Monday
+  - Prepare deployment documentation
+
+• **Action Required**:
+  - Schedule follow-up call (Tuesday or Wednesday afternoon)
+  - Discuss final sprint priorities and concerns
+
+• **Timeline**: On track for Q3 delivery with testing phase starting next week`;
+
+    // Simulate streaming
+    let currentText = '';
+    for (let i = 0; i < response.length; i++) {
+      currentText += response[i];
+      setStreamingMessage(currentText);
+      const delay = response[i] === '\n' ? 50 : Math.random() * 15 + 3;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    // Add AI message to chat
+    const aiMessage: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      type: 'ai',
+      content: response,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, aiMessage]);
+    setStreamingMessage('');
+    setIsStreaming(false);
+  };
+
   const quickActions = [
     {
       title: 'Draft a reply',
@@ -333,11 +401,9 @@ Feel free to remix and combine any of these options to create a custom response.
         p: 2,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-end',
         gap: 2
       }}>
-        {/* Welcome Section - only show if no messages */}
-        {messages.length === 0 && (
+        {/* Welcome Section - always show */}
           <Box sx={{
             py: 4,
             display: 'flex',
@@ -395,8 +461,51 @@ Feel free to remix and combine any of these options to create a custom response.
                 </Box>
               </Stack>
             </Box>
+
+            {/* Quick Action Buttons */}
+            <Box sx={{ mt: 3 }}>
+              <Stack spacing={1}>
+                {quickActions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant="outlined"
+                    onClick={
+                      action.title === 'Draft a reply' ? handleDraftReply :
+                      action.title === 'Summarize' ? handleSummarize :
+                      undefined
+                    }
+                    disabled={isThinking || isStreaming}
+                    sx={{
+                      justifyContent: 'flex-start',
+                      textTransform: 'none',
+                      py: 1.5,
+                      borderRadius: 1,
+                      color: 'text.primary',
+                      borderColor: 'divider',
+                      '&:hover': {
+                        bgcolor: 'grey.50',
+                        borderColor: 'primary.main'
+                      }
+                    }}
+                    startIcon={
+                      <Box sx={{ color: action.color }}>
+                        {action.icon}
+                      </Box>
+                    }
+                  >
+                    <Box sx={{ textAlign: 'left' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                        {action.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {action.description}
+                      </Typography>
+                    </Box>
+                  </Button>
+                ))}
+              </Stack>
+            </Box>
           </Box>
-        )}
 
         {/* Chat Messages */}
         {messages.map((message) => (
@@ -622,47 +731,6 @@ Feel free to remix and combine any of these options to create a custom response.
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Quick Actions at bottom */}
-      {messages.length === 0 && (
-        <Box sx={{ px: 2, pb: 1 }}>
-          <Stack spacing={1}>
-            {quickActions.map((action, index) => (
-              <Button
-                key={index}
-                variant="outlined"
-                onClick={action.title === 'Draft a reply' ? handleDraftReply : undefined}
-                disabled={isThinking || isStreaming}
-                sx={{
-                  justifyContent: 'flex-start',
-                  textTransform: 'none',
-                  py: 1.5,
-                  borderRadius: 1,
-                  color: 'text.primary',
-                  borderColor: 'divider',
-                  '&:hover': {
-                    bgcolor: 'grey.50',
-                    borderColor: 'primary.main'
-                  }
-                }}
-                startIcon={
-                  <Box sx={{ color: action.color }}>
-                    {action.icon}
-                  </Box>
-                }
-              >
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                    {action.title}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {action.description}
-                  </Typography>
-                </Box>
-              </Button>
-            ))}
-          </Stack>
-        </Box>
-      )}
 
       {/* Input area */}
       <Box sx={{ p: 2 }}>
