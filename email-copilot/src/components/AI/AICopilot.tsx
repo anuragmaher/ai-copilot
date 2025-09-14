@@ -149,14 +149,10 @@ ${selectedEmail.content}`;
     // Start thinking
     setIsThinking(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsThinking(false);
-
-    // Start streaming AI response
-    setIsStreaming(true);
-    setStreamingMessage('');
 
     try {
       let fullResponse = '';
+      let firstChunkReceived = false;
       let prompt = currentInput;
 
       // Check if user is responding to intent options (numbered 1, 2, 3)
@@ -180,6 +176,14 @@ ${selectedEmail.content}`;
         emailContext,
         (chunk) => {
           fullResponse += chunk;
+
+          // Switch from thinking to streaming on first chunk
+          if (!firstChunkReceived) {
+            setIsThinking(false);
+            setIsStreaming(true);
+            firstChunkReceived = true;
+          }
+
           setStreamingMessage(fullResponse);
         }
       );
@@ -239,20 +243,24 @@ ${selectedEmail.content}`;
     // Start thinking
     setIsThinking(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsThinking(false);
-
-    // Start streaming AI response with intent suggestions
-    setIsStreaming(true);
-    setStreamingMessage('');
 
     try {
       let fullResponse = '';
+      let firstChunkReceived = false;
 
       await openaiService.generateStreamingResponse(
         'You must start your response with exactly this text:\n\n"Sure, I will help you draft a reply! What kind of draft do you want me to generate?\n\nI\'m suggesting these 3 contextual reply approaches based on this email. Please choose one or more by typing 1, 2, or 3:"\n\nThen analyze the email content and provide 3 numbered options with contextually relevant reply approaches. Keep each description to maximum 6-8 words.',
         emailContext,
         (chunk) => {
           fullResponse += chunk;
+
+          // Switch from thinking to streaming on first chunk
+          if (!firstChunkReceived) {
+            setIsThinking(false);
+            setIsStreaming(true);
+            firstChunkReceived = true;
+          }
+
           setStreamingMessage(fullResponse);
         }
       );
@@ -345,20 +353,24 @@ ${selectedEmail.content}`;
     // Start thinking
     setIsThinking(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsThinking(false);
-
-    // Start streaming AI response
-    setIsStreaming(true);
-    setStreamingMessage('');
 
     try {
       let fullResponse = '';
+      let firstChunkReceived = false;
 
       await openaiService.generateStreamingResponse(
         'Summarize this email with clear bullet points. Include: subject, sender, key updates, achievements, next steps, action items, and timeline. Use emojis and clear formatting.',
         emailContext,
         (chunk) => {
           fullResponse += chunk;
+
+          // Switch from thinking to streaming on first chunk
+          if (!firstChunkReceived) {
+            setIsThinking(false);
+            setIsStreaming(true);
+            firstChunkReceived = true;
+          }
+
           setStreamingMessage(fullResponse);
         }
       );
@@ -757,7 +769,7 @@ ${selectedEmail.content}`;
         )}
 
         {/* Streaming Response */}
-        {isStreaming && (
+        {isStreaming && streamingMessage && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1 }}>
             <Avatar sx={{ width: 24, height: 24, mr: 1, bgcolor: 'grey.300' }}>
               <SmartToy sx={{ fontSize: '0.8rem' }} />

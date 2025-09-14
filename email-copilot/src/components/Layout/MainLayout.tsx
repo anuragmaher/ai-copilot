@@ -305,6 +305,7 @@ const MainLayout: React.FC = () => {
               >
                 <MenuItem value="gpt-4">GPT-4</MenuItem>
                 <MenuItem value="gpt-4-turbo">GPT-4 Turbo</MenuItem>
+                <MenuItem value="gpt-4o-mini">GPT-4o Mini</MenuItem>
                 <MenuItem value="gpt-3.5-turbo">GPT-3.5 Turbo</MenuItem>
               </Select>
             </FormControl>
