@@ -29,7 +29,11 @@ import {
   ArrowDropUp,
   ShortText,
   FormatAlignLeft,
-  Psychology
+  Psychology,
+  ExpandMore,
+  Business,
+  SentimentSatisfiedAlt,
+  Edit
 } from '@mui/icons-material';
 
 interface ChatMessage {
@@ -744,7 +748,7 @@ Feel free to remix and combine any of these options to create a custom response.
                 }
               }}
             >
-              Refine options
+              Refine
             </Button>
 
             {/* Refine Menu */}
@@ -756,22 +760,33 @@ Feel free to remix and combine any of these options to create a custom response.
               transformOrigin={{ vertical: 'bottom', horizontal: 'center' }}
               sx={{
                 '& .MuiPaper-root': {
-                  minWidth: '180px',
-                  mt: -1
+                  minWidth: '220px',
+                  mt: -1,
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  borderRadius: 1
                 }
               }}
             >
+              <MenuItem onClick={() => handleRefineOption('expand')}>
+                <ExpandMore sx={{ mr: 2, fontSize: '1rem' }} />
+                Expand
+              </MenuItem>
               <MenuItem onClick={() => handleRefineOption('make-short')}>
-                <ShortText sx={{ mr: 1, fontSize: '1rem' }} />
+                <ShortText sx={{ mr: 2, fontSize: '1rem' }} />
                 Make it short
               </MenuItem>
-              <MenuItem onClick={() => handleRefineOption('elaborate')}>
-                <FormatAlignLeft sx={{ mr: 1, fontSize: '1rem' }} />
-                Elaborate
+              <MenuItem onClick={() => handleRefineOption('make-professional')}>
+                <Business sx={{ mr: 2, fontSize: '1rem' }} />
+                Make it professional
               </MenuItem>
-              <MenuItem onClick={() => handleRefineOption('refine-kb')}>
-                <Psychology sx={{ mr: 1, fontSize: '1rem' }} />
-                Refine with KB
+              <MenuItem onClick={() => handleRefineOption('make-empathetic')}>
+                <SentimentSatisfiedAlt sx={{ mr: 2, fontSize: '1rem' }} />
+                Make it empathetic
+              </MenuItem>
+              <MenuItem onClick={() => handleRefineOption('improve-writing')}>
+                <Edit sx={{ mr: 2, fontSize: '1rem' }} />
+                Improve writing
               </MenuItem>
             </Menu>
           </Box>
