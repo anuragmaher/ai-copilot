@@ -8,14 +8,23 @@ import {
   Card,
   CardContent,
   Button,
-  Avatar
+  Avatar,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Send,
   AutoFixHigh,
   SmartToy,
   TrendingUp,
-  ContentCopy
+  ContentCopy,
+  Reply,
+  ReplyAll,
+  AutoAwesome
 } from '@mui/icons-material';
 
 interface ChatMessage {
@@ -32,6 +41,8 @@ const AICopilot: React.FC = () => {
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [streamingMessage, setStreamingMessage] = React.useState('');
   const [showInsertButton, setShowInsertButton] = React.useState(false);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [showReplyModal, setShowReplyModal] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -213,8 +224,42 @@ Feel free to remix and combine any of these options to create a custom response.
   };
 
   const handleInsertDraft = () => {
-    console.log('Inserting draft');
-    alert('Draft would be inserted into the email compose area');
+    setShowReplyModal(true);
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleResetChat = () => {
+    setMessages([]);
+    setStreamingMessage('');
+    setShowInsertButton(false);
+    setIsThinking(false);
+    setIsStreaming(false);
+    setInputText('');
+    handleMenuClose();
+  };
+
+  const handleReplyModalClose = () => {
+    setShowReplyModal(false);
+  };
+
+  const handleReply = () => {
+    console.log('Replying to email');
+    alert('Draft inserted and replying to sender only');
+    setShowReplyModal(false);
+    setShowInsertButton(false);
+  };
+
+  const handleReplyAll = () => {
+    console.log('Replying to all');
+    alert('Draft inserted and replying to all recipients');
+    setShowReplyModal(false);
     setShowInsertButton(false);
   };
 
@@ -238,7 +283,9 @@ Feel free to remix and combine any of these options to create a custom response.
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      bgcolor: 'background.default'
+      bgcolor: 'background.default',
+      borderLeft: 1,
+      borderColor: 'divider'
     }}>
       {/* Header with close button */}
       <Box sx={{
@@ -256,13 +303,26 @@ Feel free to remix and combine any of these options to create a custom response.
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton size="small" sx={{ color: 'text.secondary' }}>
+          <IconButton size="small" sx={{ color: 'text.secondary' }} onClick={handleMenuOpen}>
             <Typography sx={{ fontSize: '1.5rem' }}>⋯</Typography>
           </IconButton>
           <IconButton size="small" sx={{ color: 'text.secondary' }}>
             <Typography sx={{ fontSize: '1.2rem' }}>✕</Typography>
           </IconButton>
         </Box>
+
+        {/* Dropdown Menu */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem onClick={handleResetChat}>
+            Reset chat
+          </MenuItem>
+        </Menu>
       </Box>
 
       {/* Chat Messages Area */}
@@ -272,47 +332,68 @@ Feel free to remix and combine any of these options to create a custom response.
         p: 2,
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: 'flex-end',
         gap: 2
       }}>
-        {/* Quick Actions - only show if no messages */}
+        {/* Welcome Section - only show if no messages */}
         {messages.length === 0 && (
-          <Box>
-            <Stack spacing={1}>
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="outlined"
-                  onClick={action.title === 'Draft a reply' ? handleDraftReply : undefined}
-                  disabled={isThinking || isStreaming}
-                  sx={{
-                    justifyContent: 'flex-start',
-                    textTransform: 'none',
-                    py: 1.5,
-                    borderRadius: 2,
-                    color: 'text.primary',
-                    borderColor: 'divider',
-                    '&:hover': {
-                      bgcolor: 'grey.50',
-                      borderColor: 'primary.main'
-                    }
-                  }}
-                  startIcon={
-                    <Box sx={{ color: action.color }}>
-                      {action.icon}
-                    </Box>
-                  }
-                >
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
-                      {action.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {action.description}
-                    </Typography>
-                  </Box>
-                </Button>
-              ))}
-            </Stack>
+          <Box sx={{
+            py: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3
+          }}>
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              mb: 1
+            }}>
+              <Box sx={{
+                width: 80,
+                height: 80,
+                bgcolor: '#fdd835',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(253, 216, 53, 0.3)'
+              }}>
+                <AutoAwesome sx={{ fontSize: '2.5rem', color: 'white' }} />
+              </Box>
+            </Box>
+
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography variant="h6" sx={{ fontWeight: 500, mb: 1, color: 'text.primary' }}>
+                Hi! I'm your AI Email Copilot
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5, mb: 3 }}>
+                I can help you draft professional replies, summarize long emails, and suggest the perfect tone for your messages.
+              </Typography>
+
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, display: 'block', mb: 2 }}>
+                What I can do:
+              </Typography>
+              <Stack spacing={1.5}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <AutoFixHigh sx={{ fontSize: '1.1rem', color: '#1a73e8' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Draft professional replies
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <TrendingUp sx={{ fontSize: '1.1rem', color: '#34a853' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Summarize key points
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <SmartToy sx={{ fontSize: '1.1rem', color: '#ea4335' }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Suggest improvements
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
           </Box>
         )}
 
@@ -457,7 +538,7 @@ Feel free to remix and combine any of these options to create a custom response.
                 }
               }}
             >
-              Discard
+              Refine with KB
             </Button>
           </Box>
         )}
@@ -465,6 +546,48 @@ Feel free to remix and combine any of these options to create a custom response.
         {/* Invisible element to scroll to */}
         <div ref={messagesEndRef} />
       </Box>
+
+      {/* Quick Actions at bottom */}
+      {messages.length === 0 && (
+        <Box sx={{ px: 2, pb: 1 }}>
+          <Stack spacing={1}>
+            {quickActions.map((action, index) => (
+              <Button
+                key={index}
+                variant="outlined"
+                onClick={action.title === 'Draft a reply' ? handleDraftReply : undefined}
+                disabled={isThinking || isStreaming}
+                sx={{
+                  justifyContent: 'flex-start',
+                  textTransform: 'none',
+                  py: 1.5,
+                  borderRadius: 2,
+                  color: 'text.primary',
+                  borderColor: 'divider',
+                  '&:hover': {
+                    bgcolor: 'grey.50',
+                    borderColor: 'primary.main'
+                  }
+                }}
+                startIcon={
+                  <Box sx={{ color: action.color }}>
+                    {action.icon}
+                  </Box>
+                }
+              >
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                    {action.title}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {action.description}
+                  </Typography>
+                </Box>
+              </Button>
+            ))}
+          </Stack>
+        </Box>
+      )}
 
       {/* Input area */}
       <Box sx={{ p: 2 }}>
@@ -515,6 +638,56 @@ Feel free to remix and combine any of these options to create a custom response.
           </IconButton>
         </Box>
       </Box>
+
+      {/* Reply Modal */}
+      <Dialog
+        open={showReplyModal}
+        onClose={handleReplyModalClose}
+        aria-labelledby="reply-dialog-title"
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle id="reply-dialog-title" sx={{ textAlign: 'center', pb: 2 }}>
+          How would you like to respond?
+        </DialogTitle>
+        <DialogContent sx={{ pt: 0 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 2 }}>
+            Choose how to send your draft
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'center', gap: 1, pb: 3 }}>
+          <Button
+            onClick={handleReply}
+            variant="contained"
+            startIcon={<Reply />}
+            sx={{
+              textTransform: 'none',
+              bgcolor: '#4285f4',
+              '&:hover': { bgcolor: '#3367d6' },
+              px: 3
+            }}
+          >
+            Reply
+          </Button>
+          <Button
+            onClick={handleReplyAll}
+            variant="outlined"
+            startIcon={<ReplyAll />}
+            sx={{
+              textTransform: 'none',
+              borderColor: '#dadce0',
+              color: 'text.secondary',
+              '&:hover': {
+                borderColor: '#5f6368',
+                bgcolor: 'grey.50'
+              },
+              px: 3
+            }}
+          >
+            Reply All
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
