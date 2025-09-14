@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useSettings } from '../../contexts/SettingsContext';
+import { useEmail } from '../../contexts/EmailContext';
 import { openaiService } from '../../services/openaiService';
 import {
   Box,
@@ -39,6 +40,7 @@ interface ChatMessage {
 
 const AICopilot: React.FC = () => {
   const { apiKey, model, temperature, isConfigured } = useSettings();
+  const { selectedEmail } = useEmail();
   const [inputText, setInputText] = React.useState('');
   const [isThinking, setIsThinking] = React.useState(false);
   const [isStreaming, setIsStreaming] = React.useState(false);
@@ -64,35 +66,18 @@ const AICopilot: React.FC = () => {
     }
   }, [apiKey, model, temperature, isConfigured]);
 
-  const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
+  // Clear chat when email changes
+  React.useEffect(() => {
+    setMessages([]);
+    setStreamingMessage('');
+    setIsThinking(false);
+    setIsStreaming(false);
+  }, [selectedEmail?.id]);
 
-    // Check if OpenAI is configured
-    if (!isConfigured) {
-      const errorMessage: ChatMessage = {
-        id: Date.now().toString(),
-        type: 'ai',
-        content: 'Please configure your OpenAI API key in the settings first. Click the settings icon in the header to get started.',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      return;
-    }
-
-    // Add user message
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: inputText,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    const currentInput = inputText;
-    setInputText('');
-
-    // Email context for the AI
-    const emailContext = `Subject: Project Update - Q3 Milestones
+  // Generate email context from selected email
+  const getEmailContext = () => {
+    if (!selectedEmail) {
+      return `Subject: Project Update - Q3 Milestones
 From: John Doe <john.doe@company.com>
 To: me@company.com
 
@@ -122,6 +107,44 @@ Please let me know your availability for Tuesday or Wednesday afternoon.
 
 Best regards,
 John`;
+    }
+
+    return `Subject: ${selectedEmail.subject}
+From: ${selectedEmail.sender} <${selectedEmail.senderEmail}>
+To: me@company.com
+
+${selectedEmail.content}`;
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    // Check if OpenAI is configured
+    if (!isConfigured) {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'ai',
+        content: 'Please configure your OpenAI API key in the settings first. Click the settings icon in the header to get started.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: inputText,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputText;
+    setInputText('');
+
+    // Email context for the AI
+    const emailContext = getEmailContext();
 
     // Start thinking
     setIsThinking(true);
@@ -141,11 +164,11 @@ John`;
       const isIntentSelection = intentPattern.test(currentInput.trim());
 
       if (isIntentSelection) {
-        // Generate actual email draft based on selected intent
+        // Generate actual email draft based on selected intent - dynamically based on email content
         const intentMap: { [key: string]: string } = {
-          '1': 'Write a concise professional email reply with acknowledgment and scheduling. Be appreciative of the progress, acknowledge key achievements, and propose a meeting time.',
-          '2': 'Write a concise professional email reply asking key questions about remaining work, potential risks, and timelines.',
-          '3': 'Write a concise professional email reply with brief feedback and strategic suggestions for next steps.'
+          '1': 'Write a concise professional email reply using the first approach/intent that was suggested. Be contextually appropriate to the original email content.',
+          '2': 'Write a concise professional email reply using the second approach/intent that was suggested. Be contextually appropriate to the original email content.',
+          '3': 'Write a concise professional email reply using the third approach/intent that was suggested. Be contextually appropriate to the original email content.'
         };
 
         prompt = intentMap[currentInput.trim()] || currentInput;
@@ -211,36 +234,7 @@ John`;
     setMessages(prev => [...prev, draftMessage]);
 
     // Email context
-    const emailContext = `Subject: Project Update - Q3 Milestones
-From: John Doe <john.doe@company.com>
-To: me@company.com
-
-Hi there,
-
-I hope this email finds you well. I wanted to provide you with an update on our Q3 project milestones and discuss the next steps for our upcoming deliverables.
-
-**Progress Summary:**
-- ✅ Phase 1: Requirements gathering completed
-- ✅ Phase 2: Design mockups approved by stakeholders
-- 🔄 Phase 3: Development in progress (80% complete)
-- ⏳ Phase 4: Testing and QA scheduled for next week
-
-**Key Achievements:**
-1. Successfully integrated the new authentication system
-2. Improved application performance by 35%
-3. Resolved all critical security vulnerabilities
-
-**Next Steps:**
-- Complete remaining development tasks by Friday
-- Begin comprehensive testing on Monday
-- Prepare deployment documentation
-
-I'd love to schedule a brief call this week to discuss any concerns and align on priorities for the final sprint.
-
-Please let me know your availability for Tuesday or Wednesday afternoon.
-
-Best regards,
-John`;
+    const emailContext = getEmailContext();
 
     // Start thinking
     setIsThinking(true);
@@ -255,7 +249,7 @@ John`;
       let fullResponse = '';
 
       await openaiService.generateStreamingResponse(
-        'Respond with: "Sure, I will help you draft a reply! What kind of draft do you want me to generate? Based on this email, here are 3 options. Please choose one by typing 1, 2, or 3:" followed by 3 numbered reply options like: "1. Acknowledgement and Scheduling", "2. Inquiry and Discussion", "3. Suggestions and Feedback" with very brief, one-line descriptions.',
+        'You must start your response with exactly this text:\n\n"Sure, I will help you draft a reply! What kind of draft do you want me to generate?\n\nI\'m suggesting these 3 contextual reply approaches based on this email. Please choose one by typing 1, 2, or 3:"\n\nThen analyze the email content and provide 3 numbered options with contextually relevant reply approaches. Keep each description to maximum 6-8 words.',
         emailContext,
         (chunk) => {
           fullResponse += chunk;
@@ -346,36 +340,7 @@ John`;
     setMessages(prev => [...prev, summarizeMessage]);
 
     // Email context
-    const emailContext = `Subject: Project Update - Q3 Milestones
-From: John Doe <john.doe@company.com>
-To: me@company.com
-
-Hi there,
-
-I hope this email finds you well. I wanted to provide you with an update on our Q3 project milestones and discuss the next steps for our upcoming deliverables.
-
-**Progress Summary:**
-- ✅ Phase 1: Requirements gathering completed
-- ✅ Phase 2: Design mockups approved by stakeholders
-- 🔄 Phase 3: Development in progress (80% complete)
-- ⏳ Phase 4: Testing and QA scheduled for next week
-
-**Key Achievements:**
-1. Successfully integrated the new authentication system
-2. Improved application performance by 35%
-3. Resolved all critical security vulnerabilities
-
-**Next Steps:**
-- Complete remaining development tasks by Friday
-- Begin comprehensive testing on Monday
-- Prepare deployment documentation
-
-I'd love to schedule a brief call this week to discuss any concerns and align on priorities for the final sprint.
-
-Please let me know your availability for Tuesday or Wednesday afternoon.
-
-Best regards,
-John`;
+    const emailContext = getEmailContext();
 
     // Start thinking
     setIsThinking(true);

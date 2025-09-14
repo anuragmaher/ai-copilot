@@ -26,6 +26,7 @@ import {
   KeyboardArrowLeft,
   KeyboardArrowRight
 } from '@mui/icons-material';
+import { useEmail } from '../../contexts/EmailContext';
 
 interface EmailMessage {
   id: string;
@@ -75,8 +76,12 @@ John`,
 };
 
 const EmailConversation: React.FC = () => {
-  const [isStarred, setIsStarred] = React.useState(mockEmailThread.isStarred);
+  const { selectedEmail } = useEmail();
+  const [isStarred, setIsStarred] = React.useState(false);
   const [replyText, setReplyText] = React.useState('');
+
+  // Use selected email from context or fallback to mock data
+  const currentEmail = selectedEmail || mockEmailThread;
 
   const handleStarToggle = () => {
     setIsStarred(!isStarred);
@@ -127,7 +132,7 @@ const EmailConversation: React.FC = () => {
       {/* Email header */}
       <Box sx={{ px: 3, py: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h4" sx={{ mb: 2, fontWeight: 400 }}>
-          {mockEmailThread.subject}
+          {currentEmail.subject}
         </Typography>
 
         <Chip
@@ -147,23 +152,23 @@ const EmailConversation: React.FC = () => {
         <Box sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 3 }}>
             <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
-              {mockEmailThread.sender.split(' ').map(n => n[0]).join('')}
+              {currentEmail.sender.split(' ').map(n => n[0]).join('')}
             </Avatar>
 
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Box>
                   <Typography variant="body1" fontWeight={500}>
-                    {mockEmailThread.sender}
+                    {currentEmail.sender}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    &lt;{mockEmailThread.senderEmail}&gt;
+                    &lt;{currentEmail.senderEmail}&gt;
                   </Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="body2" color="text.secondary">
-                    {mockEmailThread.timestamp}
+                    {currentEmail.timestamp}
                   </Typography>
                   <IconButton size="small" onClick={handleStarToggle}>
                     {isStarred ? <Star color="warning" fontSize="small" /> : <StarBorder fontSize="small" />}
@@ -192,7 +197,7 @@ const EmailConversation: React.FC = () => {
               color: 'text.primary'
             }}
           >
-            {mockEmailThread.content}
+            {currentEmail.content}
           </Typography>
         </Box>
       </Box>

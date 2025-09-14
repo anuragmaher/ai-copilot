@@ -22,6 +22,7 @@ import {
   Delete,
   Label
 } from '@mui/icons-material';
+import { useEmail, emailDatabase } from '../../contexts/EmailContext';
 
 interface EmailItem {
   id: string;
@@ -78,11 +79,14 @@ const gmailSidebarItems = [
 ];
 
 const EmailList: React.FC = () => {
-  const [selectedEmail, setSelectedEmail] = React.useState<string>('1');
+  const { selectedEmail, setSelectedEmail } = useEmail();
   const [selectedFolder, setSelectedFolder] = React.useState<string>('Inbox');
 
   const handleEmailClick = (emailId: string) => {
-    setSelectedEmail(emailId);
+    const fullEmail = emailDatabase.find(email => email.id === emailId);
+    if (fullEmail) {
+      setSelectedEmail(fullEmail);
+    }
   };
 
   const handleFolderClick = (folder: string) => {
@@ -141,7 +145,7 @@ const EmailList: React.FC = () => {
           {mockEmails.slice(0, 3).map((email) => (
             <ListItem key={email.id} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
-                selected={selectedEmail === email.id}
+                selected={selectedEmail?.id === email.id}
                 onClick={() => handleEmailClick(email.id)}
                 sx={{
                   borderRadius: 1,
