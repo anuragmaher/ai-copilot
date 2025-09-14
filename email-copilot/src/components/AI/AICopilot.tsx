@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useSettings } from '../../contexts/SettingsContext';
+import { openaiService } from '../../services/openaiService';
 import {
   Box,
   Typography,
@@ -36,6 +38,7 @@ interface ChatMessage {
 }
 
 const AICopilot: React.FC = () => {
+  const { apiKey, model, temperature, isConfigured } = useSettings();
   const [inputText, setInputText] = React.useState('');
   const [isThinking, setIsThinking] = React.useState(false);
   const [isStreaming, setIsStreaming] = React.useState(false);
@@ -54,8 +57,27 @@ const AICopilot: React.FC = () => {
     scrollToBottom();
   }, [messages, streamingMessage, isThinking, isStreaming]);
 
+  // Configure OpenAI service when settings change
+  React.useEffect(() => {
+    if (isConfigured) {
+      openaiService.configure({ apiKey, model, temperature });
+    }
+  }, [apiKey, model, temperature, isConfigured]);
+
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
+
+    // Check if OpenAI is configured
+    if (!isConfigured) {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'ai',
+        content: 'Please configure your OpenAI API key in the settings first. Click the settings icon in the header to get started.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -66,101 +88,119 @@ const AICopilot: React.FC = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputText;
     setInputText('');
+
+    // Email context for the AI
+    const emailContext = `Subject: Project Update - Q3 Milestones
+From: John Doe <john.doe@company.com>
+To: me@company.com
+
+Hi there,
+
+I hope this email finds you well. I wanted to provide you with an update on our Q3 project milestones and discuss the next steps for our upcoming deliverables.
+
+**Progress Summary:**
+- ✅ Phase 1: Requirements gathering completed
+- ✅ Phase 2: Design mockups approved by stakeholders
+- 🔄 Phase 3: Development in progress (80% complete)
+- ⏳ Phase 4: Testing and QA scheduled for next week
+
+**Key Achievements:**
+1. Successfully integrated the new authentication system
+2. Improved application performance by 35%
+3. Resolved all critical security vulnerabilities
+
+**Next Steps:**
+- Complete remaining development tasks by Friday
+- Begin comprehensive testing on Monday
+- Prepare deployment documentation
+
+I'd love to schedule a brief call this week to discuss any concerns and align on priorities for the final sprint.
+
+Please let me know your availability for Tuesday or Wednesday afternoon.
+
+Best regards,
+John`;
 
     // Start thinking
     setIsThinking(true);
-    await new Promise(resolve => setTimeout(resolve, 2250));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setIsThinking(false);
 
     // Start streaming AI response
     setIsStreaming(true);
     setStreamingMessage('');
 
-    let response = '';
-    if (inputText.toLowerCase().includes('summarize') || inputText.toLowerCase().includes('summary')) {
-      response = `• Subject: Project Update - Q3 Milestones
-• Phase 1: Requirements gathering completed ✅
-• Phase 2: Design mockups approved ✅
-• Phase 3: Development 80% complete 🔄
-• Phase 4: Testing scheduled for next week ⏳
-• Key achievements: New auth system, 35% performance boost, security fixes
-• Next: Complete dev by Friday, start testing Monday
-• Meeting requested: Tuesday or Wednesday afternoon`;
-    } else if (inputText.toLowerCase().includes('1') || inputText.toLowerCase().includes('acknowledge') || inputText.toLowerCase().includes('schedule')) {
-      response = `Hi John,
+    try {
+      let fullResponse = '';
+      let prompt = currentInput;
 
-Thanks for the great progress update! Excellent work on completing phases 1 & 2 and achieving 80% development completion.
+      // Check if user is responding to intent options (numbered 1, 2, 3)
+      const intentPattern = /^[123]$/;
+      const isIntentSelection = intentPattern.test(currentInput.trim());
 
-I'm particularly impressed with:
-- New authentication system integration
-- 35% performance improvement
-- Security vulnerability resolution
+      if (isIntentSelection) {
+        // Generate actual email draft based on selected intent
+        const intentMap: { [key: string]: string } = {
+          '1': 'Write a concise professional email reply with acknowledgment and scheduling. Be appreciative of the progress, acknowledge key achievements, and propose a meeting time.',
+          '2': 'Write a concise professional email reply asking key questions about remaining work, potential risks, and timelines.',
+          '3': 'Write a concise professional email reply with brief feedback and strategic suggestions for next steps.'
+        };
 
-Let's schedule a call this week to discuss next steps. Tuesday afternoon at 2:00 PM works well for me.
+        prompt = intentMap[currentInput.trim()] || currentInput;
+        prompt += ' Keep it concise but complete - greeting, 2-3 short paragraphs for main content, and brief closing. Aim for 80-120 words total. Do not include subject line - only the email body.';
+      }
 
-Best regards,
-[Your name]`;
-    } else if (inputText.toLowerCase().includes('2') || inputText.toLowerCase().includes('request') || inputText.toLowerCase().includes('details')) {
-      response = `Hi John,
+      await openaiService.generateStreamingResponse(
+        prompt,
+        emailContext,
+        (chunk) => {
+          fullResponse += chunk;
+          setStreamingMessage(fullResponse);
+        }
+      );
 
-Thanks for the update. Could you provide more details on:
+      // Add AI message to chat
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: fullResponse,
+        timestamp: new Date()
+      };
 
-- Specifics of the remaining 20% development work
-- Testing scenarios planned for next week
-- Any potential risks or blockers
-- Resource needs for the final sprint
+      setMessages(prev => [...prev, aiMessage]);
+      setStreamingMessage('');
+      setIsStreaming(false);
 
-Also, please share the updated timeline with key testing and deployment milestones.
+    } catch (error: any) {
+      console.error('Error generating AI response:', error);
 
-Best regards,
-[Your name]`;
-    } else if (inputText.toLowerCase().includes('3') || inputText.toLowerCase().includes('feedback') || inputText.toLowerCase().includes('milestones')) {
-      response = `Hi John,
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: `Error: ${error.message}`,
+        timestamp: new Date()
+      };
 
-Excellent progress on Q3 milestones! The 80% completion rate and key achievements are impressive.
-
-**Feedback:**
-- Phases 1 & 2 completion: Outstanding
-- 35% performance boost: Exceptional
-- Security fixes: Critical and well-executed
-
-**Next Steps:**
-- Add buffer time for testing complexity
-- Prepare deployment documentation
-- Plan post-deployment monitoring
-
-Let's schedule that call to finalize details.
-
-Best regards,
-[Your name]`;
-    } else {
-      response = `I understand. Could you provide more details about what specific aspects you'd like me to focus on in the reply?`;
+      setMessages(prev => [...prev, errorMessage]);
+      setStreamingMessage('');
+      setIsStreaming(false);
     }
-
-    // Simulate streaming
-    let currentText = '';
-    for (let i = 0; i < response.length; i++) {
-      currentText += response[i];
-      setStreamingMessage(currentText);
-      const delay = response[i] === '\n' ? 50 : Math.random() * 20 + 5;
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-
-    // Add AI message to chat
-    const aiMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      type: 'ai',
-      content: response,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, aiMessage]);
-    setStreamingMessage('');
-    setIsStreaming(false);
   };
 
   const handleDraftReply = async () => {
+    if (!isConfigured) {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'ai',
+        content: 'Please configure your OpenAI API key in the settings first. Click the settings icon in the header to get started.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+
     const draftMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -169,6 +209,38 @@ Best regards,
     };
 
     setMessages(prev => [...prev, draftMessage]);
+
+    // Email context
+    const emailContext = `Subject: Project Update - Q3 Milestones
+From: John Doe <john.doe@company.com>
+To: me@company.com
+
+Hi there,
+
+I hope this email finds you well. I wanted to provide you with an update on our Q3 project milestones and discuss the next steps for our upcoming deliverables.
+
+**Progress Summary:**
+- ✅ Phase 1: Requirements gathering completed
+- ✅ Phase 2: Design mockups approved by stakeholders
+- 🔄 Phase 3: Development in progress (80% complete)
+- ⏳ Phase 4: Testing and QA scheduled for next week
+
+**Key Achievements:**
+1. Successfully integrated the new authentication system
+2. Improved application performance by 35%
+3. Resolved all critical security vulnerabilities
+
+**Next Steps:**
+- Complete remaining development tasks by Friday
+- Begin comprehensive testing on Monday
+- Prepare deployment documentation
+
+I'd love to schedule a brief call this week to discuss any concerns and align on priorities for the final sprint.
+
+Please let me know your availability for Tuesday or Wednesday afternoon.
+
+Best regards,
+John`;
 
     // Start thinking
     setIsThinking(true);
@@ -179,36 +251,44 @@ Best regards,
     setIsStreaming(true);
     setStreamingMessage('');
 
-    const response = `Sure, how would you like me to draft your reply?
+    try {
+      let fullResponse = '';
 
-1. Acknowledge progress and schedule follow-up meeting
+      await openaiService.generateStreamingResponse(
+        'Respond with: "Sure, I will help you draft a reply! What kind of draft do you want me to generate? Based on this email, here are 3 options. Please choose one by typing 1, 2, or 3:" followed by 3 numbered reply options like: "1. Acknowledgement and Scheduling", "2. Inquiry and Discussion", "3. Suggestions and Feedback" with very brief, one-line descriptions.',
+        emailContext,
+        (chunk) => {
+          fullResponse += chunk;
+          setStreamingMessage(fullResponse);
+        }
+      );
 
-2. Request additional project details and clarification
+      // Add AI message to chat
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: fullResponse,
+        timestamp: new Date()
+      };
 
-3. Provide feedback on milestones and next steps
+      setMessages(prev => [...prev, aiMessage]);
+      setStreamingMessage('');
+      setIsStreaming(false);
 
-Feel free to remix and combine any of these options to create a custom response.`;
+    } catch (error: any) {
+      console.error('Error generating AI response:', error);
 
-    // Simulate streaming
-    let currentText = '';
-    for (let i = 0; i < response.length; i++) {
-      currentText += response[i];
-      setStreamingMessage(currentText);
-      const delay = response[i] === '\n' ? 50 : Math.random() * 15 + 3;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: `Error: ${error.message}`,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+      setStreamingMessage('');
+      setIsStreaming(false);
     }
-
-    // Add AI message to chat
-    const aiMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      type: 'ai',
-      content: response,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, aiMessage]);
-    setStreamingMessage('');
-    setIsStreaming(false);
   };
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -245,6 +325,17 @@ Feel free to remix and combine any of these options to create a custom response.
   };
 
   const handleSummarize = async () => {
+    if (!isConfigured) {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'ai',
+        content: 'Please configure your OpenAI API key in the settings first. Click the settings icon in the header to get started.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+
     const summarizeMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -254,62 +345,85 @@ Feel free to remix and combine any of these options to create a custom response.
 
     setMessages(prev => [...prev, summarizeMessage]);
 
+    // Email context
+    const emailContext = `Subject: Project Update - Q3 Milestones
+From: John Doe <john.doe@company.com>
+To: me@company.com
+
+Hi there,
+
+I hope this email finds you well. I wanted to provide you with an update on our Q3 project milestones and discuss the next steps for our upcoming deliverables.
+
+**Progress Summary:**
+- ✅ Phase 1: Requirements gathering completed
+- ✅ Phase 2: Design mockups approved by stakeholders
+- 🔄 Phase 3: Development in progress (80% complete)
+- ⏳ Phase 4: Testing and QA scheduled for next week
+
+**Key Achievements:**
+1. Successfully integrated the new authentication system
+2. Improved application performance by 35%
+3. Resolved all critical security vulnerabilities
+
+**Next Steps:**
+- Complete remaining development tasks by Friday
+- Begin comprehensive testing on Monday
+- Prepare deployment documentation
+
+I'd love to schedule a brief call this week to discuss any concerns and align on priorities for the final sprint.
+
+Please let me know your availability for Tuesday or Wednesday afternoon.
+
+Best regards,
+John`;
+
     // Start thinking
     setIsThinking(true);
-    await new Promise(resolve => setTimeout(resolve, 2250));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setIsThinking(false);
 
-    // Start streaming AI response with bullet point summary
+    // Start streaming AI response
     setIsStreaming(true);
     setStreamingMessage('');
 
-    const response = `**Email Summary:**
+    try {
+      let fullResponse = '';
 
-• **Subject**: Project Update - Q3 Milestones
+      await openaiService.generateStreamingResponse(
+        'Summarize this email with clear bullet points. Include: subject, sender, key updates, achievements, next steps, action items, and timeline. Use emojis and clear formatting.',
+        emailContext,
+        (chunk) => {
+          fullResponse += chunk;
+          setStreamingMessage(fullResponse);
+        }
+      );
 
-• **Sender**: John Doe (john.doe@company.com)
+      // Add AI message to chat
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: fullResponse,
+        timestamp: new Date()
+      };
 
-• **Key Updates**:
-  - Phase 1 & 2 completed ✅
-  - Phase 3 development 80% complete 🔄
-  - Phase 4 testing scheduled for next week
+      setMessages(prev => [...prev, aiMessage]);
+      setStreamingMessage('');
+      setIsStreaming(false);
 
-• **Major Achievements**:
-  - New authentication system integrated
-  - 35% performance improvement achieved
-  - All critical security vulnerabilities resolved
+    } catch (error: any) {
+      console.error('Error generating AI response:', error);
 
-• **Next Steps**:
-  - Complete remaining development by Friday
-  - Begin comprehensive testing Monday
-  - Prepare deployment documentation
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: `Error: ${error.message}`,
+        timestamp: new Date()
+      };
 
-• **Action Required**:
-  - Schedule follow-up call (Tuesday or Wednesday afternoon)
-  - Discuss final sprint priorities and concerns
-
-• **Timeline**: On track for Q3 delivery with testing phase starting next week`;
-
-    // Simulate streaming
-    let currentText = '';
-    for (let i = 0; i < response.length; i++) {
-      currentText += response[i];
-      setStreamingMessage(currentText);
-      const delay = response[i] === '\n' ? 50 : Math.random() * 15 + 3;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      setMessages(prev => [...prev, errorMessage]);
+      setStreamingMessage('');
+      setIsStreaming(false);
     }
-
-    // Add AI message to chat
-    const aiMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      type: 'ai',
-      content: response,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, aiMessage]);
-    setStreamingMessage('');
-    setIsStreaming(false);
   };
 
   const handleCopyMessage = (messageContent: string) => {
@@ -586,22 +700,30 @@ Feel free to remix and combine any of these options to create a custom response.
                   p: 0.5,
                   boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                 }}>
-                  <IconButton
+                  <Button
                     size="small"
                     onClick={() => handleCopyMessage(message.content)}
+                    startIcon={<ContentCopy sx={{ fontSize: '0.75rem' }} />}
                     sx={{
-                      width: 28,
-                      height: 28,
+                      minWidth: 'auto',
+                      px: 1,
+                      py: 0.5,
                       bgcolor: 'white',
                       color: 'text.secondary',
+                      textTransform: 'none',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      border: '1px solid',
+                      borderColor: 'grey.300',
                       '&:hover': {
-                        bgcolor: 'grey.100',
-                        color: 'primary.main'
+                        bgcolor: 'primary.50',
+                        color: 'primary.main',
+                        borderColor: 'primary.main'
                       }
                     }}
                   >
-                    <ContentCopy sx={{ fontSize: '0.8rem' }} />
-                  </IconButton>
+                    Copy
+                  </Button>
                   <IconButton
                     size="small"
                     onClick={() => handleThumbsUp(message.id)}
@@ -611,8 +733,8 @@ Feel free to remix and combine any of these options to create a custom response.
                       bgcolor: 'white',
                       color: 'text.secondary',
                       '&:hover': {
-                        bgcolor: 'success.light',
-                        color: 'success.main'
+                        bgcolor: 'success.main',
+                        color: 'white'
                       }
                     }}
                   >
@@ -627,8 +749,8 @@ Feel free to remix and combine any of these options to create a custom response.
                       bgcolor: 'white',
                       color: 'text.secondary',
                       '&:hover': {
-                        bgcolor: 'error.light',
-                        color: 'error.main'
+                        bgcolor: 'error.main',
+                        color: 'white'
                       }
                     }}
                   >

@@ -8,7 +8,16 @@ import {
   InputBase,
   Avatar,
   Menu,
-  MenuItem
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select
 } from '@mui/material';
 import {
   Brightness4,
@@ -20,15 +29,21 @@ import {
   AccountCircle
 } from '@mui/icons-material';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import EmailList from '../Email/EmailList';
 import EmailConversation from '../Email/EmailConversation';
 import AICopilot from '../AI/AICopilot';
 
 const MainLayout: React.FC = () => {
   const { isDarkMode, toggleTheme } = useTheme();
+  const { apiKey, model, temperature, setApiKey, setModel, setTemperature } = useSettings();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [copilotWidth, setCopilotWidth] = React.useState(25);
+  const [copilotWidth, setCopilotWidth] = React.useState(27);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [tempApiKey, setTempApiKey] = React.useState('');
+  const [tempModel, setTempModel] = React.useState('');
+  const [tempTemperature, setTempTemperature] = React.useState(0.7);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -77,6 +92,24 @@ const MainLayout: React.FC = () => {
       document.body.style.userSelect = '';
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  const handleSettingsOpen = () => {
+    setTempApiKey(apiKey);
+    setTempModel(model);
+    setTempTemperature(temperature);
+    setShowSettings(true);
+  };
+
+  const handleSettingsClose = () => {
+    setShowSettings(false);
+  };
+
+  const handleSettingsSave = () => {
+    setApiKey(tempApiKey);
+    setModel(tempModel);
+    setTemperature(tempTemperature);
+    setShowSettings(false);
+  };
 
   return (
     <Box sx={{ flexGrow: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -151,6 +184,10 @@ const MainLayout: React.FC = () => {
           {/* Right side icons */}
           <IconButton color="inherit" sx={{ color: 'text.secondary' }}>
             <Apps />
+          </IconButton>
+
+          <IconButton color="inherit" onClick={handleSettingsOpen} sx={{ color: 'text.secondary' }}>
+            <Settings />
           </IconButton>
 
           <IconButton color="inherit" onClick={toggleTheme} sx={{ color: 'text.secondary' }}>
@@ -234,6 +271,68 @@ const MainLayout: React.FC = () => {
           <AICopilot />
         </Box>
       </Box>
+
+      {/* Settings Modal */}
+      <Dialog
+        open={showSettings}
+        onClose={handleSettingsClose}
+        aria-labelledby="settings-dialog-title"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="settings-dialog-title">
+          AI Settings
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              fullWidth
+              label="OpenAI API Key"
+              type="password"
+              value={tempApiKey}
+              onChange={(e) => setTempApiKey(e.target.value)}
+              placeholder="Enter your OpenAI API key"
+              variant="outlined"
+              helperText="Your API key is stored locally and never sent to our servers"
+            />
+
+            <FormControl fullWidth>
+              <InputLabel>Model</InputLabel>
+              <Select
+                label="Model"
+                value={tempModel}
+                onChange={(e) => setTempModel(e.target.value)}
+              >
+                <MenuItem value="gpt-4">GPT-4</MenuItem>
+                <MenuItem value="gpt-4-turbo">GPT-4 Turbo</MenuItem>
+                <MenuItem value="gpt-3.5-turbo">GPT-3.5 Turbo</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label="Temperature"
+              type="number"
+              value={tempTemperature}
+              onChange={(e) => setTempTemperature(parseFloat(e.target.value))}
+              inputProps={{ min: 0, max: 2, step: 0.1 }}
+              helperText="Controls randomness (0-2). Lower values make output more focused and deterministic."
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={handleSettingsClose} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSettingsSave}
+            variant="contained"
+            sx={{ ml: 1 }}
+          >
+            Save Settings
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
