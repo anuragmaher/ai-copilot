@@ -249,7 +249,7 @@ ${selectedEmail.content}`;
       let fullResponse = '';
 
       await openaiService.generateStreamingResponse(
-        'You must start your response with exactly this text:\n\n"Sure, I will help you draft a reply! What kind of draft do you want me to generate?\n\nI\'m suggesting these 3 contextual reply approaches based on this email. Please choose one by typing 1, 2, or 3:"\n\nThen analyze the email content and provide 3 numbered options with contextually relevant reply approaches. Keep each description to maximum 6-8 words.',
+        'You must start your response with exactly this text:\n\n"Sure, I will help you draft a reply! What kind of draft do you want me to generate?\n\nI\'m suggesting these 3 contextual reply approaches based on this email. Please choose one or more by typing 1, 2, or 3:"\n\nThen analyze the email content and provide 3 numbered options with contextually relevant reply approaches. Keep each description to maximum 6-8 words.',
         emailContext,
         (chunk) => {
           fullResponse += chunk;

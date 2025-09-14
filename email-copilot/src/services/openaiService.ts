@@ -23,7 +23,11 @@ export class OpenAIService {
       throw new Error('OpenAI service not configured. Please set your API key in settings.');
     }
 
-    let systemPrompt = `You are an AI email assistant. Help the user with email-related tasks like drafting replies, summarizing emails, and providing suggestions. Be professional, concise, and helpful.`;
+    let systemPrompt = `You are an AI email assistant. You MUST only help with email-related tasks like drafting replies, summarizing emails, providing email suggestions, or discussing email content.
+
+If the user asks anything unrelated to emails (general knowledge, other topics, etc.), politely redirect them by saying: "I'm specifically designed to help with email-related tasks. Please ask me about drafting replies, summarizing emails, or any questions related to the email content you're viewing."
+
+Be professional, concise, and helpful for email tasks only.`;
 
     let userPrompt = userMessage;
 
@@ -81,7 +85,11 @@ export class OpenAIService {
       throw new Error('OpenAI service not configured. Please set your API key in settings.');
     }
 
-    let systemPrompt = `You are an AI email assistant. Help the user with email-related tasks like drafting replies, summarizing emails, and providing suggestions. Be professional, concise, and helpful.`;
+    let systemPrompt = `You are an AI email assistant. You MUST only help with email-related tasks like drafting replies, summarizing emails, providing email suggestions, or discussing email content.
+
+If the user asks anything unrelated to emails (general knowledge, other topics, etc.), politely redirect them by saying: "I'm specifically designed to help with email-related tasks. Please ask me about drafting replies, summarizing emails, or any questions related to the email content you're viewing."
+
+Be professional, concise, and helpful for email tasks only.`;
 
     let userPrompt = userMessage;
 
